@@ -47,9 +47,12 @@ namespace BiliDM_WebSocket.Utils
 
         public void SendAllMessage(string message)
         {
-            foreach (var client in Clients)
+            lock (Clients.SyncRoot)
             {
-                client.SendMessage(message);
+                foreach (var client in Clients)
+                {
+                    client.SendMessage(message);
+                }
             }
         }
 
