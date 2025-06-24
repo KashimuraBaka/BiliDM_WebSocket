@@ -58,7 +58,7 @@ namespace BiliDM_WebSocket.Utils
 
         private void StartListener(HttpListener httpListener)
         {
-            Task.Run(async () =>
+            Task.Run(() =>
             {
                 while (httpListener.IsListening)
                 {
@@ -67,8 +67,7 @@ namespace BiliDM_WebSocket.Utils
                         var ctx = httpListener.GetContext();
                         if (ctx.Request.IsWebSocketRequest)
                         {
-                            var client = (await ctx.AcceptWebSocketAsync(null)).WebSocket;
-                            ListenWebSocketClient(client);
+                            ListenWebSocketClient(ctx);
                         }
                         else
                         {
@@ -84,16 +83,14 @@ namespace BiliDM_WebSocket.Utils
             });
         }
 
-        private async void ListenWebSocketClient(WebSocket client)
+        private async void ListenWebSocketClient(HttpListenerContext context)
         {
-            await Task.Run(() =>
-            {
-                var clientAsync = new WebSocketAsync(client);
-                Clients.Add(clientAsync);
-                clientAsync.Listening();
-                Clients.Remove(clientAsync);
-                client.Dispose();
-            });
+            var client = (await context.AcceptWebSocketAsync(null)).WebSocket;
+            var clientAsync = new WebSocketAsync(client);
+            Clients.Add(clientAsync);
+            await clientAsync.Listening();
+            Clients.Remove(clientAsync);
+            client.Dispose();
         }
 
         public void Dispose()
@@ -114,9 +111,13 @@ namespace BiliDM_WebSocket.Utils
             WebSocket = webSocket;
         }
 
-        public void Listening()
+        public async Task Listening(int buffeSize = 2048)
         {
-            while (WebSocket.State is WebSocketState.Open) { }
+            var buffer = new byte[buffeSize];
+            while (WebSocket.State is WebSocketState.Open)
+            {
+                await WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            }
         }
 
         public void SendMessage(string message)
