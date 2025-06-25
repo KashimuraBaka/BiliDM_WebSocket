@@ -72,7 +72,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Utils\Config.cs" />
+    <Compile Include="Utils\DanmuModel.cs" />
     <Compile Include="Utils\ENV.cs" />
+    <Compile Include="Utils\Request.cs" />
     <Compile Include="Utils\Structs\ObservableObject.cs" />
     <Compile Include="Utils\Structs\RelayCommand.cs" />
     <Compile Include="Utils\WebSokcetServer.cs" />

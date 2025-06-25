@@ -2,6 +2,7 @@
 using BiliDM_WebSocket.Utils;
 using BiliDM_WebSocket.Views.Windows;
 using Newtonsoft.Json;
+using System;
 using System.IO;
 
 namespace BiliDM_WebSocket
@@ -9,6 +10,7 @@ namespace BiliDM_WebSocket
     public class Main : DMPlugin
     {
         public MainWindow AdminWindow { get; } = new MainWindow();
+        public Request Request { get; } = new Request();
 
         public Main()
         {
@@ -49,9 +51,22 @@ namespace BiliDM_WebSocket
             AdminWindow.Show();
         }
 
-        private void OnReceivedDanmaku(object sender, ReceivedDanmakuArgs e)
+        private async void OnReceivedDanmaku(object sender, ReceivedDanmakuArgs e)
         {
-            ENV.WebSokcetServer?.SendAllMessage(e.Danmaku.RawDataJToken.ToString(Formatting.None));
+            var danmu = e.Danmaku.RawDataJToken.ToObject<DanmakuRawData>();
+            if (!string.IsNullOrEmpty(danmu.Data.EmojiImageUrl))
+            {
+                var extension = Path.GetExtension(danmu.Data.EmojiImageUrl);
+                var data = await Request.GetData(danmu.Data.EmojiImageUrl);
+                danmu.Data.EmojiImageData = $"data:image/{extension.Substring(1)};base64,{Convert.ToBase64String(data)}";
+            }
+            if (!string.IsNullOrEmpty(danmu.Data.UserFace))
+            {
+                var extension = Path.GetExtension(danmu.Data.UserFace);
+                var data = await Request.GetData(danmu.Data.UserFace);
+                danmu.Data.UserFaceData = $"data:image/{extension.Substring(1)};base64,{Convert.ToBase64String(data)}";
+            }
+            ENV.WebSokcetServer?.SendAllMessage(JsonConvert.SerializeObject(danmu));
         }
     }
 }
