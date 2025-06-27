@@ -52,7 +52,7 @@ namespace BiliDM_WebSocket.Utils
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error fetching data from {url}: {ex.Message}");
-                return default;
+                return Array.Empty<byte>();
             }
         }
     }
