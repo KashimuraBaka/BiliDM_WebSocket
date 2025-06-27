@@ -57,7 +57,7 @@ namespace BiliDM_WebSocket
             var rawData = e.Danmaku.RawDataJToken;
             if (rawData.Value<string>("cmd") is "LIVE_OPEN_PLATFORM_DM")
             {
-                var danmu = e.Danmaku.RawDataJToken.ToObject<DanmakuRawData>();
+                var danmu = rawData.ToObject<DanmakuRawData>();
                 // 获取表情 Base64 数据
                 if (!string.IsNullOrEmpty(danmu.Data.EmojiImageUrl))
                 {
