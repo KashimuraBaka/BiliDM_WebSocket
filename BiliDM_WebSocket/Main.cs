@@ -4,6 +4,7 @@ using BiliDM_WebSocket.Views.Windows;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BiliDM_WebSocket
 {
@@ -53,20 +54,33 @@ namespace BiliDM_WebSocket
 
         private async void OnReceivedDanmaku(object sender, ReceivedDanmakuArgs e)
         {
-            var danmu = e.Danmaku.RawDataJToken.ToObject<DanmakuRawData>();
-            if (!string.IsNullOrEmpty(danmu.Data.EmojiImageUrl))
+            var rawData = e.Danmaku.RawDataJToken;
+            if (rawData.Value<string>("cmd") is "LIVE_OPEN_PLATFORM_DM")
             {
-                var extension = Path.GetExtension(danmu.Data.EmojiImageUrl);
-                var data = await Request.GetData(danmu.Data.EmojiImageUrl);
-                danmu.Data.EmojiImageData = $"data:image/{extension.Substring(1)};base64,{Convert.ToBase64String(data)}";
+                var danmu = e.Danmaku.RawDataJToken.ToObject<DanmakuRawData>();
+                // 获取表情 Base64 数据
+                if (!string.IsNullOrEmpty(danmu.Data.EmojiImageUrl))
+                {
+                    danmu.Data.EmojiImageData = await GetImageBase64Data(danmu.Data.EmojiImageUrl);
+                }
+                // 获取头像 Base64 数据
+                if (!string.IsNullOrEmpty(danmu.Data.UserFace))
+                {
+                    danmu.Data.UserFaceData = await GetImageBase64Data(danmu.Data.UserFace);
+                }
+                ENV.WebSokcetServer?.SendAllMessage(JsonConvert.SerializeObject(danmu));
             }
-            if (!string.IsNullOrEmpty(danmu.Data.UserFace))
+            else
             {
-                var extension = Path.GetExtension(danmu.Data.UserFace);
-                var data = await Request.GetData(danmu.Data.UserFace);
-                danmu.Data.UserFaceData = $"data:image/{extension.Substring(1)};base64,{Convert.ToBase64String(data)}";
+                ENV.WebSokcetServer?.SendAllMessage(rawData.ToString());
             }
-            ENV.WebSokcetServer?.SendAllMessage(JsonConvert.SerializeObject(danmu));
+        }
+
+        private async Task<string> GetImageBase64Data(string url)
+        {
+            var extension = Path.GetExtension(url);
+            var data = await Request.GetData(url);
+            return $"data:image/{extension.Substring(1)};base64,{Convert.ToBase64String(data)}";
         }
     }
 }
